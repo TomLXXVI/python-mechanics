@@ -260,7 +260,7 @@ class Beam2D:
                 F = self.__create_reaction_force(name, None, None, F=F_mag)
                 self.action_forces.append(F)
                 forces[name] = F
-            if F_x is not None and F_y is None:
+            elif F_x is not None and F_y is None:
                 F = self.__create_reaction_force(name, F_x, 0.0)
                 self.action_forces.append(F)
                 forces[name] = F
@@ -298,8 +298,12 @@ class Beam2D:
             theta = Q_(np.arctan2(F_y, F_x), 'rad')
             force = Force(support.position, F, theta)
         else:
-            F = Q_(F, 'N')
-            theta = support.theta
+            if F < 0:
+                F = Q_(abs(F), 'N')
+                theta = support.theta + np.pi
+            else:
+                F = Q_(F, 'N')
+                theta = support.theta
             force = Force(support.position, F, theta)
         return force
 
