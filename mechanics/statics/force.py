@@ -175,7 +175,7 @@ class Force:
 
     def __get_component_xy(self) -> float | sp.Expr:
         F_xy = self._magnitude * sp.cos(self._gamma)
-        if isinstance(F_xy, float) and F_xy < 0.0:
+        if isinstance(F_xy, sp.Float) and F_xy < 0.0:
             F_xy = np.abs(F_xy)
         elif isinstance(self._gamma, float):
             cos_gamma = round(np.cos(self._gamma), 12)
