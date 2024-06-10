@@ -97,7 +97,11 @@ class FixedEnd2D(Support):
 
 
 class TwoForceMember2D(Support):
-
+    """Represents a planar two-force-member, e.g. a slender rod or a cable. The
+    reaction force exerted by this support has only one unknown: its magnitude.
+    The direction of the reaction force coincides with the longitudinal axis of
+    the two-force-member.
+    """
     def __init__(self, name: str, position: Position, theta: Quantity):
         super().__init__(name, position)
         self.theta = theta

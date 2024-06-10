@@ -136,12 +136,13 @@ class Beam2D:
         """Returns the internal normal force, the internal shear force, and the
         internal bending moment as `Quantity` objects, which are present in the
         cross-section at position `x` along the beam. A cut can be located
-        on the left or on the right part of the beam.
+        on the left or on the right part of the beam, which is indicated by
+        parameter `side`.
         """
         if side == 'left':
             x_min = Q_(0, 'm')
             x_max = x
-        else:  # from cut, look to right
+        else:
             x_min = x
             x_max = self.length
         # Get the known action forces (point forces and/or from distributed
