@@ -253,8 +253,13 @@ class Beam2D:
             else:
                 reactions[name] = {component: value}
         for name, d in reactions.items():
+            F_mag: float | None = d.get('F', None)
             F_x: float | None = d.get('F_x', None)
             F_y: float | None = d.get('F_y', None)
+            if F_mag is not None:
+                F = self.__create_reaction_force(name, None, None, F=F_mag)
+                self.action_forces.append(F)
+                forces[name] = F
             if F_x is not None and F_y is None:
                 F = self.__create_reaction_force(name, F_x, 0.0)
                 self.action_forces.append(F)
@@ -279,17 +284,23 @@ class Beam2D:
     def __create_reaction_force(
         self,
         name: str,
-        F_x: float,
-        F_y: float
+        F_x: float | None,
+        F_y: float | None,
+        F: float = None
     ) -> Force:
         """Creates a `Force` object from the Sympy solution of a reaction
         force, when using the `get_reactions` method.
         """
         d = {support.name: support for support in self.supports}
         support = d[name]
-        F = Q_(np.sqrt(F_x ** 2 + F_y ** 2), 'N')
-        theta = Q_(np.arctan2(F_y, F_x), 'rad')
-        force = Force(support.position, F, theta)
+        if F is None:
+            F = Q_(np.sqrt(F_x ** 2 + F_y ** 2), 'N')
+            theta = Q_(np.arctan2(F_y, F_x), 'rad')
+            force = Force(support.position, F, theta)
+        else:
+            F = Q_(F, 'N')
+            theta = support.theta
+            force = Force(support.position, F, theta)
         return force
 
     @staticmethod
