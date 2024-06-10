@@ -1,3 +1,3 @@
 # python-mechanics
 
-A Python library for doing calculations about mechanics of materials.
+A Python library for performing calculations concerning the mechanics of materials.
