@@ -18,7 +18,6 @@ class Beam2D:
     along the centerline of the beam. The positive y-axis direction points
     upward.
     """
-
     def __init__(
         self,
         length: Quantity,
