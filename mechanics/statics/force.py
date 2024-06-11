@@ -192,7 +192,7 @@ class Force:
     def __get_component_x(self, F_xy: float | sp.Expr) -> Quantity | sp.Expr:
         F_x = F_xy * sp.cos(self._theta)
         if isinstance(F_x, sp.Number):
-            F_x = Q_(float(F_x), self.u_force)
+            F_x = Q_(round(float(F_x), 12), self.u_force)
         else:
             if isinstance(self._theta, float):
                 cos_theta = round(np.cos(self._theta), 12)
@@ -207,7 +207,7 @@ class Force:
     def __get_component_y(self, F_xy: float | sp.Expr) -> Quantity | sp.Expr:
         F_y = F_xy * sp.sin(self._theta)
         if isinstance(F_y, sp.Number):
-            F_y = Q_(float(F_y), self.u_force)
+            F_y = Q_(round(float(F_y), 12), self.u_force)
         else:
             if isinstance(self._theta, float):
                 sin_theta = round(np.sin(self._theta), 12)
@@ -222,7 +222,7 @@ class Force:
     def __get_component_z(self) -> Quantity | sp.Expr:
         F_z = self._magnitude * sp.sin(self._gamma)
         if isinstance(F_z, sp.Number):
-            F_z = Q_(float(F_z), self.u_force)
+            F_z = Q_(round(float(F_z), 12), self.u_force)
         else:
             if isinstance(self._gamma, float):
                 sin_gamma = round(np.sin(self._gamma), 12)

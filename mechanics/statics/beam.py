@@ -91,13 +91,22 @@ class Beam2D:
         forces_a = self.__get_action_forces(x_min, x_max)
         forces_d = self.__get_distributed_forces(x_min, x_max)
         forces = forces_a + forces_d
-        # Get the components of the known action forces and sum them:
+        # Get the components of the known action forces:
         tup_F_x, tup_F_y, _ = zip(*[F.components for F in forces])
-        *_, tup_M_z = zip(*[F.moment().components for F in forces])
+        # Get the moments about the z-axis of the known action forces and torques:
+        *_, tup_M_z_1 = zip(*[F.moment().components for F in forces])
+        torques_a = self.__get_action_torques(x_min, x_max)
+        if torques_a:
+            *_, tup_M_z_2 = zip(*[T.components for T in torques_a])
+            lst_M_z = list(tup_M_z_1) + list(tup_M_z_2)
+        else:
+            lst_M_z = list(tup_M_z_1)
+        # Take the sum of the components:
         F_a_x = sum(F_x.to('N').m for F_x in tup_F_x)
         F_a_y = sum(F_y.to('N').m for F_y in tup_F_y)
-        M_a_z = sum(M_z.to('N * m').m for M_z in tup_M_z)
-        # Get the components of the unknown reaction forces from supports:
+        M_a_z = sum(M_z.to('N * m').m for M_z in lst_M_z)
+        # Get the components of the unknown reaction forces and torques exerted
+        # by the supports on the beam:
         F_r_x = sum([sup.F_x for sup in self.supports if sup.F_x is not None])
         F_r_y = sum([sup.F_y for sup in self.supports if sup.F_y is not None])
         M_r_z = sum([sup.M_z for sup in self.supports if sup.M_z is not None])
@@ -243,7 +252,6 @@ class Beam2D:
         `Moment` objects.
         """
         reactions = {}
-        forces, torques = {}, {}
         for key, value in sol_dict.items():
             s = str(key).split('.')
             name, component = s[0], s[1]
@@ -252,6 +260,7 @@ class Beam2D:
                 reactions[name][component] = value
             else:
                 reactions[name] = {component: value}
+        reaction_forces, reaction_torques = {}, {}
         for name, d in reactions.items():
             F_mag: float | None = d.get('F', None)
             F_x: float | None = d.get('F_x', None)
@@ -259,27 +268,27 @@ class Beam2D:
             if F_mag is not None:
                 F = self.__create_reaction_force(name, None, None, F=F_mag)
                 self.action_forces.append(F)
-                forces[name] = F
+                reaction_forces[name] = F
             elif F_x is not None and F_y is None:
                 F = self.__create_reaction_force(name, F_x, 0.0)
                 self.action_forces.append(F)
-                forces[name] = F
+                reaction_forces[name] = F
             elif F_x is None and F_y is not None:
                 F = self.__create_reaction_force(name, 0.0, F_y)
                 self.action_forces.append(F)
-                forces[name] = F
+                reaction_forces[name] = F
             elif F_x is not None and F_y is not None:
                 F = self.__create_reaction_force(name, F_x, F_y)
                 self.action_forces.append(F)
-                forces[name] = F
+                reaction_forces[name] = F
             else:
                 pass
             M_z: float | None = d.get('M_z', None)
             if M_z is not None:
                 M = self.__create_reaction_torque(M_z)
                 self.action_torques.append(M)
-                torques[name] = M
-        return forces, torques
+                reaction_torques[name] = M
+        return reaction_forces, reaction_torques
 
     def __create_reaction_force(
         self,
@@ -316,9 +325,7 @@ class Beam2D:
         return M
 
     @staticmethod
-    def __create_internal_forces(
-        sol_dict: dict[str, sp.Float]
-    ) -> dict[str, Quantity]:
+    def __create_internal_forces(sol_dict: dict[str, sp.Float]) -> dict[str, Quantity]:
         """Creates a dictionary with the Sympy solutions of the internal forces
         as `Quantity` objects, when using the `cut` method.
         """
@@ -331,3 +338,20 @@ class Beam2D:
             else:
                 d[name] = Q_(value, 'N')
         return d
+
+    def diagrams_data(self, num: int = 50) -> tuple[Quantity, ...]:
+        """Returns `Quantity`-arrays `x_arr`, `N_arr`, `V_arr`, and `M_arr` with
+        `x_arr` an array of equally spaced positions along the longitudinal axis
+        of the beam, `N_arr` an array with the internal normal force at each
+        position, `V_arr` an array with the internal shear force at each
+        position, and `M_arr` an array with the internal bending moment at each
+        position.
+        """
+        x_min = 0.0
+        x_max = self.length.m
+        x_arr = Q_(np.linspace(x_min, x_max, num, endpoint=True), self.length.units)
+        irl_list = [self.cut(x) for x in x_arr]
+        N_arr = Quantity.from_list([irl['F_x'] for irl in irl_list])
+        V_arr = Quantity.from_list([irl['F_y'] for irl in irl_list])
+        M_arr = Quantity.from_list([irl['M_z'] for irl in irl_list])
+        return x_arr, N_arr, V_arr, M_arr

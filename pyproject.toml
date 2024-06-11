@@ -9,7 +9,7 @@ packages = [{include = "python_mechanics"}]
 
 [tool.poetry.dependencies]
 python = "^3.12"
-pint = "^0.23"
+pint = "^0.24"
 numpy = "^1.26.4"
 matplotlib = "^3.8.4"
 pandas = "^2.2.1"

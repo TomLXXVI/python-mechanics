@@ -52,10 +52,16 @@ class DistributedLoad2D:
             if x2 is not None
             else self.points[-1][0].to(self.u_pos).m
         )
-        # noinspection PyTypeChecker
-        Q_mag = quad(self.q_x, x1, x2)[0]
-        x_c = quad(lambda x: x * self.q_x(x), x1, x2)[0] / Q_mag
-        Q = self.__create_force(Q_mag, x_c)
+        if x2 > x1:
+            # noinspection PyTypeChecker
+            Q_mag = quad(self.q_x, x1, x2)[0]
+            x_c = quad(lambda x: x * self.q_x(x), x1, x2)[0] / Q_mag
+            Q = self.__create_force(Q_mag, x_c)
+        elif x2 == x1:
+            Q_mag = self.q_x(x1)
+            Q = self.__create_force(Q_mag, x1)
+        else:
+            raise ValueError("position `x2` cannot be smaller then position `x1`")
         return Q
 
     def __set_units(self) -> None:

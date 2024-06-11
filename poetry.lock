@@ -130,6 +130,17 @@ test = ["anyio[trio]", "coverage[toml] (>=7)", "exceptiongroup (>=1.2.0)", "hypo
 trio = ["trio (>=0.23)"]
 
 [[package]]
+name = "appdirs"
+version = "1.4.4"
+description = "A small Python module for determining appropriate platform-specific dirs, e.g. a \"user data dir\"."
+optional = false
+python-versions = "*"
+files = [
+    {file = "appdirs-1.4.4-py2.py3-none-any.whl", hash = "sha256:a841dacd6b99318a741b166adb07e19ee71a274450e68237b4650ca1055ab128"},
+    {file = "appdirs-1.4.4.tar.gz", hash = "sha256:7d5d0167b2b1ba821647616af46a749d1c653740dd0d2415100fe26e27afdf41"},
+]
+
+[[package]]
 name = "appnope"
 version = "0.1.4"
 description = "Disable App Nap on macOS >= 10.9"
@@ -828,6 +839,40 @@ pycodestyle = ">=2.11.0,<2.12.0"
 pyflakes = ">=3.2.0,<3.3.0"
 
 [[package]]
+name = "flexcache"
+version = "0.3"
+description = "Saves and loads to the cache a transformed versions of a source object."
+optional = false
+python-versions = ">=3.9"
+files = [
+    {file = "flexcache-0.3-py3-none-any.whl", hash = "sha256:d43c9fea82336af6e0115e308d9d33a185390b8346a017564611f1466dcd2e32"},
+    {file = "flexcache-0.3.tar.gz", hash = "sha256:18743bd5a0621bfe2cf8d519e4c3bfdf57a269c15d1ced3fb4b64e0ff4600656"},
+]
+
+[package.dependencies]
+typing-extensions = "*"
+
+[package.extras]
+test = ["pytest", "pytest-cov", "pytest-mpl", "pytest-subtests"]
+
+[[package]]
+name = "flexparser"
+version = "0.3.1"
+description = "Parsing made fun ... using typing."
+optional = false
+python-versions = ">=3.9"
+files = [
+    {file = "flexparser-0.3.1-py3-none-any.whl", hash = "sha256:2e3e2936bec1f9277f777ef77297522087d96adb09624d4fe4240fd56885c013"},
+    {file = "flexparser-0.3.1.tar.gz", hash = "sha256:36f795d82e50f5c9ae2fde1c33f21f88922fdd67b7629550a3cc4d0b40a66856"},
+]
+
+[package.dependencies]
+typing-extensions = "*"
+
+[package.extras]
+test = ["pytest", "pytest-cov", "pytest-mpl", "pytest-subtests"]
+
+[[package]]
 name = "fonttools"
 version = "4.53.0"
 description = "Tools to manipulate font files"
@@ -1256,13 +1301,13 @@ files = [
 
 [[package]]
 name = "jsonpointer"
-version = "2.4"
+version = "3.0.0"
 description = "Identify specific nodes in a JSON document (RFC 6901)"
 optional = false
-python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*, !=3.5.*, !=3.6.*"
+python-versions = ">=3.7"
 files = [
-    {file = "jsonpointer-2.4-py2.py3-none-any.whl", hash = "sha256:15d51bba20eea3165644553647711d150376234112651b4f1811022aecad7d7a"},
-    {file = "jsonpointer-2.4.tar.gz", hash = "sha256:585cee82b70211fa9e6043b7bb89db6e1aa49524340dde8ad6b63206ea689d88"},
+    {file = "jsonpointer-3.0.0-py2.py3-none-any.whl", hash = "sha256:13e088adc14fca8b6aa8177c044e12701e6ad4b28ff10e65f2267a90109c9942"},
+    {file = "jsonpointer-3.0.0.tar.gz", hash = "sha256:2b2d729f2091522d61c3b31f82e11870f60b68f43fbc705cb76bf4b832af59ef"},
 ]
 
 [[package]]
@@ -1471,24 +1516,24 @@ test = ["flaky", "ipykernel", "pre-commit", "pytest (>=7.0,<9)", "pytest-console
 
 [[package]]
 name = "jupyter-server-proxy"
-version = "4.1.2"
+version = "4.2.0"
 description = "A Jupyter server extension to run additional processes and proxy to them that comes bundled JupyterLab extension to launch pre-defined processes."
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "jupyter_server_proxy-4.1.2-py3-none-any.whl", hash = "sha256:f97bd0c6bbba4931d8ae22bef872703c9785fc1258c4bc196955e2bd034f3eaa"},
-    {file = "jupyter_server_proxy-4.1.2.tar.gz", hash = "sha256:6fd8ce88a0100e637b48f1d3aa32f09672bcb2813dc057d70567f0a40b1237f5"},
+    {file = "jupyter_server_proxy-4.2.0-py3-none-any.whl", hash = "sha256:747567cc08ae22ca7decf9178f9893ab0f008de9b98726574f5dd11343a08c23"},
+    {file = "jupyter_server_proxy-4.2.0.tar.gz", hash = "sha256:e4397eed637279a16ca7ab7c87bf276dc4422545f2d1aff9a0d10e5ebc7f012b"},
 ]
 
 [package.dependencies]
 aiohttp = "*"
-jupyter-server = ">=1.0"
-simpervisor = ">=1.0"
-tornado = ">=5.1"
-traitlets = ">=4.2.1"
+jupyter-server = ">=1.24.0"
+simpervisor = ">=1.0.0"
+tornado = ">=6.1.0"
+traitlets = ">=5.1.0"
 
 [package.extras]
-acceptance = ["jupyter-server-proxy[test]", "robotframework-jupyterlibrary (>=0.4.2)"]
+acceptance = ["pytest", "pytest-asyncio", "pytest-cov", "pytest-html", "robotframework-jupyterlibrary (>=0.4.2)"]
 classic = ["jupyter-server (<2)", "jupyterlab (>=3.0.0,<4.0.0a0)", "notebook (<7.0.0a0)"]
 lab = ["jupyter-server (>=2)", "jupyterlab (>=4.0.5,<5.0.0a0)", "nbclassic", "notebook (>=7)"]
 test = ["pytest", "pytest-asyncio", "pytest-cov", "pytest-html"]
@@ -2399,16 +2444,19 @@ xmp = ["defusedxml"]
 
 [[package]]
 name = "pint"
-version = "0.23"
+version = "0.24"
 description = "Physical quantities module"
 optional = false
-python-versions = ">=3.9"
+python-versions = ">=3.10"
 files = [
-    {file = "Pint-0.23-py3-none-any.whl", hash = "sha256:df79b6b5f1beb7ed0cd55d91a0766fc55f972f757a9364e844958c05e8eb66f9"},
-    {file = "Pint-0.23.tar.gz", hash = "sha256:e1509b91606dbc52527c600a4ef74ffac12fff70688aff20e9072409346ec9b4"},
+    {file = "Pint-0.24-py3-none-any.whl", hash = "sha256:c82fe82b30421817f9baa869df770bfed841c4a62bd5ef015942a0ea69e7282f"},
+    {file = "pint-0.24.tar.gz", hash = "sha256:c6c7c027b821413db1ac46b3b7bd296592848b5aec29a88cfc6e378fd1371903"},
 ]
 
 [package.dependencies]
+appdirs = ">=1.4.4"
+flexcache = ">=0.3"
+flexparser = ">=0.3"
 typing-extensions = "*"
 
 [package.extras]
@@ -2416,7 +2464,7 @@ babel = ["babel (<=2.8)"]
 bench = ["pytest", "pytest-codspeed"]
 dask = ["dask"]
 mip = ["mip (>=1.13)"]
-numpy = ["numpy (>=1.19.5)"]
+numpy = ["numpy (>=1.23)"]
 pandas = ["pint-pandas (>=0.3)"]
 test = ["pytest", "pytest-benchmark", "pytest-cov", "pytest-mpl", "pytest-subtests"]
 testbase = ["pytest", "pytest-benchmark", "pytest-cov", "pytest-subtests"]
@@ -2470,13 +2518,13 @@ twisted = ["twisted"]
 
 [[package]]
 name = "prompt-toolkit"
-version = "3.0.46"
+version = "3.0.47"
 description = "Library for building powerful interactive command lines in Python"
 optional = false
 python-versions = ">=3.7.0"
 files = [
-    {file = "prompt_toolkit-3.0.46-py3-none-any.whl", hash = "sha256:45abe60a8300f3c618b23c16c4bb98c6fc80af8ce8b17c7ae92db48db3ee63c1"},
-    {file = "prompt_toolkit-3.0.46.tar.gz", hash = "sha256:869c50d682152336e23c4db7f74667639b5047494202ffe7670817053fd57795"},
+    {file = "prompt_toolkit-3.0.47-py3-none-any.whl", hash = "sha256:0d7bfa67001d5e39d02c224b663abc33687405033a8c422d0d675a5a13361d10"},
+    {file = "prompt_toolkit-3.0.47.tar.gz", hash = "sha256:1e1b29cb58080b1e69f207c893a1a7bf16d127a5c30c9d17a25a5d77792e5360"},
 ]
 
 [package.dependencies]
@@ -3850,4 +3898,4 @@ test = ["big-O", "importlib-resources", "jaraco.functools", "jaraco.itertools", 
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.12"
-content-hash = "afca242d6b6d71492e7187efb1f034fee72a64fac59d430498d58c3a0eeae191"
+content-hash = "aabfb03a03069d786d5969cb1d37e34785cbd22bbe5472bc5a2b458071f5d355"
