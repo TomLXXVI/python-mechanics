@@ -5,6 +5,8 @@ Q_ = Quantity
 
 Position = Quantity | tuple[Quantity, ...]
 
+ORIGIN = (Q_(0, 'm'), Q_(0, 'm'), Q_(0, 'm'))
+
 
 def set_position(position: Position) -> tuple[Quantity, Quantity, Quantity]:
     """Returns a position in 2D- or 3D-space as tuple of 3 `Quantity`
@@ -42,7 +44,10 @@ def set_position(position: Position) -> tuple[Quantity, Quantity, Quantity]:
             pos = (position, Q_(0, position.units), Q_(0, position.units))
         else:
             if position.size == 1:
-                pos = (position[0], Q_(0, position[0].units), Q_(0, position[0].units))
+                try:
+                    pos = (position[0], Q_(0, position[0].units), Q_(0, position[0].units))
+                except IndexError:
+                    pos = (position, Q_(0, position.units), Q_(0, position.units))
             elif position.size == 2:
                 pos = (position[0], position[1], Q_(0, position[0].units))
             elif position.size == 3:

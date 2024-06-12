@@ -4,8 +4,8 @@ import numpy as np
 from mechanics import Quantity
 from .force import Force, Moment
 from .supports import Support
-from .distributed_load import DistributedLoad2D
-
+from .distributed_load import DistributedLoad1D
+from ._units import Units
 
 Q_ = Quantity
 
@@ -21,7 +21,7 @@ class Beam2D:
     def __init__(
         self,
         length: Quantity,
-        loads: Sequence[Force | Moment | DistributedLoad2D] | None = None,
+        loads: Sequence[Force | Moment | DistributedLoad1D] | None = None,
         supports: Sequence[Support] | None = None
     ):
         """Creates a `Beam2D` instance.
@@ -31,30 +31,33 @@ class Beam2D:
         length:
             Length of the beam.
         loads:
-            Sequence of the loads exerted on the beam (concentrated forces,
-            torques or bending moments, and/or distributed loadings).
+            Sequence of known external loads exerted on the beam (concentrated
+            forces, moments, and/or distributed loadings).
         supports:
-            Sequence of supports that support the beam.
+            Sequence of supports that support the beam and of which the reaction
+            forces exerted on the beam are yet unknown.
         """
         self.length = length
         self.action_forces: list[Force] = []
         self.action_torques: list[Moment] = []
-        self.distributed_loads: list[DistributedLoad2D] = []
+        self.distributed_loads: list[DistributedLoad1D] = []
         self.supports: list[Support] = []
+        self.__set_units()
         for load in loads:
             if isinstance(load, Force):
                 self.add_forces(load)
-            elif isinstance(load, DistributedLoad2D):
+            elif isinstance(load, DistributedLoad1D):
                 self.add_distributed_loads(load)
             elif isinstance(load, Moment):
                 self.add_torques(load)
             else:
                 raise ValueError("not a valid load")
-        for support in supports:
-            if isinstance(support, Support):
-                self.add_supports(support)
-            else:
-                raise ValueError("not a valid support")
+        if supports is not None:
+            for support in supports:
+                if isinstance(support, Support):
+                    self.add_supports(support)
+                else:
+                    raise ValueError("not a valid support")
 
     def add_forces(self, *forces: Force) -> None:
         """Applies one or more known action forces to the beam."""
@@ -64,7 +67,7 @@ class Beam2D:
         """Adds one or more supports to the beam."""
         self.supports.extend(supports)
 
-    def add_distributed_loads(self, *loads: DistributedLoad2D) -> None:
+    def add_distributed_loads(self, *loads: DistributedLoad1D) -> None:
         """Places one or more distributed loads on the beam."""
         self.distributed_loads.extend(loads)
 
@@ -72,7 +75,7 @@ class Beam2D:
         """Applies one or more torques to the beam."""
         self.action_torques.extend(torques)
 
-    def get_reactions(self) -> tuple[dict[str, Force], dict[str, Moment]]:
+    def get_reactions(self) -> dict[str, Force | Moment]:
         """Returns the solutions for the unknown reaction forces applied by
         the beam supports.
 
@@ -85,7 +88,7 @@ class Beam2D:
         """
         # Get the action forces (point forces and from distributed loads)
         # applied to the whole beam:
-        x_min = Q_(0, 'm')
+        x_min = Q_(0, self.__u_pos)
         x_max = self.length
         # Get the known action forces acting on the beam:
         forces_a = self.__get_action_forces(x_min, x_max)
@@ -102,9 +105,9 @@ class Beam2D:
         else:
             lst_M_z = list(tup_M_z_1)
         # Take the sum of the components:
-        F_a_x = sum(F_x.to('N').m for F_x in tup_F_x)
-        F_a_y = sum(F_y.to('N').m for F_y in tup_F_y)
-        M_a_z = sum(M_z.to('N * m').m for M_z in lst_M_z)
+        F_a_x = sum(F_x.to(self.__u_force).m for F_x in tup_F_x)
+        F_a_y = sum(F_y.to(self.__u_force).m for F_y in tup_F_y)
+        M_a_z = sum(M_z.to(self.__u_moment).m for M_z in lst_M_z)
         # Get the components of the unknown reaction forces and torques exerted
         # by the supports on the beam:
         F_r_x = sum([sup.F_x for sup in self.supports if sup.F_x is not None])
@@ -112,12 +115,12 @@ class Beam2D:
         M_r_z = sum([sup.M_z for sup in self.supports if sup.M_z is not None])
         # Get the moments of the reaction forces about the origin:
         M_r_z += sum([
-            sup.position[0].to('m').m * sup.F_y
+            sup.position[0].to(self.__u_pos).m * sup.F_y
             for sup in self.supports
             if sup.F_y is not None
         ])
         M_r_z += sum([
-            -sup.position[1].to('m').m * sup.F_x
+            -sup.position[1].to(self.__u_pos).m * sup.F_x
             for sup in self.supports
             if sup.F_x is not None
         ])
@@ -148,7 +151,7 @@ class Beam2D:
         parameter `side`.
         """
         if side == 'left':
-            x_min = Q_(0, 'm')
+            x_min = Q_(0, self.__u_pos)
             x_max = x
         else:
             x_min = x
@@ -163,9 +166,9 @@ class Beam2D:
         if forces:
             tup_F_x, tup_F_y, _ = zip(*[F.components for F in forces])
             *_, tup_M_z = zip(*[F.moment().components for F in forces])
-            F_a_x = sum(F_x.to('N').m for F_x in tup_F_x)
-            F_a_y = sum(F_y.to('N').m for F_y in tup_F_y)
-            M_a_z = sum(M_z.to('N * m').m for M_z in tup_M_z)
+            F_a_x = sum(F_x.to(self.__u_force).m for F_x in tup_F_x)
+            F_a_y = sum(F_y.to(self.__u_force).m for F_y in tup_F_y)
+            M_a_z = sum(M_z.to(self.__u_moment).m for M_z in tup_M_z)
         else:
             F_a_x = 0.0
             F_a_y = 0.0
@@ -176,16 +179,21 @@ class Beam2D:
         # the sum of the moments of forces:
         if torques:
             *_, tup_T_z = zip(*[T.components for T in torques])
-            M_a_z += sum(T_z.to('N * m').m for T_z in tup_T_z)
+            M_a_z += sum(T_z.to(self.__u_moment).m for T_z in tup_T_z)
         # Create the static equilibrium equations and solve for the components
         # of the unknown reaction forces:
         F_i_x, F_i_y, M_i_z = sp.symbols(['F_x', 'F_y', 'M_z'])
         F_x_bal = sp.Eq(F_i_x, -F_a_x)
         F_y_bal = sp.Eq(F_i_y, -F_a_y)
-        M_z_bal = sp.Eq(M_i_z + x.to('m').m * F_i_y, -M_a_z)
+        M_z_bal = sp.Eq(M_i_z + x.to(self.__u_pos).m * F_i_y, -M_a_z)
         sol_dict = sp.solve([F_x_bal, F_y_bal, M_z_bal])
         sol = self.__create_internal_forces(sol_dict)
         return sol
+
+    def __set_units(self) -> None:
+        self.__u_pos = Units.u_pos
+        self.__u_force = Units.u_force
+        self.__u_moment = Units.u_moment
 
     def __get_action_forces(
         self,
@@ -243,7 +251,7 @@ class Beam2D:
     def __add_reactions(
         self,
         sol_dict: dict[str, sp.Float]
-    ) -> tuple[dict[str, Force], dict[str, Moment]]:
+    ) -> dict[str, Force | Moment]:
         """Used in method `get_reactions`. Takes the Sympy solutions of the
         reaction forces and torques, and adds these to the list of known action
         forces and/or to the list of known action torques.
@@ -260,7 +268,6 @@ class Beam2D:
                 reactions[name][component] = value
             else:
                 reactions[name] = {component: value}
-        reaction_forces, reaction_torques = {}, {}
         for name, d in reactions.items():
             F_mag: float | None = d.get('F', None)
             F_x: float | None = d.get('F_x', None)
@@ -268,27 +275,27 @@ class Beam2D:
             if F_mag is not None:
                 F = self.__create_reaction_force(name, None, None, F=F_mag)
                 self.action_forces.append(F)
-                reaction_forces[name] = F
+                reactions[name] = F
             elif F_x is not None and F_y is None:
                 F = self.__create_reaction_force(name, F_x, 0.0)
                 self.action_forces.append(F)
-                reaction_forces[name] = F
+                reactions[name] = F
             elif F_x is None and F_y is not None:
                 F = self.__create_reaction_force(name, 0.0, F_y)
                 self.action_forces.append(F)
-                reaction_forces[name] = F
+                reactions[name] = F
             elif F_x is not None and F_y is not None:
                 F = self.__create_reaction_force(name, F_x, F_y)
                 self.action_forces.append(F)
-                reaction_forces[name] = F
+                reactions[name] = F
             else:
                 pass
             M_z: float | None = d.get('M_z', None)
             if M_z is not None:
                 M = self.__create_reaction_torque(M_z)
                 self.action_torques.append(M)
-                reaction_torques[name] = M
-        return reaction_forces, reaction_torques
+                reactions[name] = M
+        return reactions
 
     def __create_reaction_force(
         self,
@@ -303,29 +310,27 @@ class Beam2D:
         d = {support.name: support for support in self.supports}
         support = d[name]
         if F is None:
-            F = Q_(np.sqrt(F_x ** 2 + F_y ** 2), 'N')
+            F = Q_(np.sqrt(F_x ** 2 + F_y ** 2), self.__u_force)
             theta = Q_(np.arctan2(F_y, F_x), 'rad')
             force = Force(support.position, F, theta)
         else:
             if F < 0:
-                F = Q_(abs(F), 'N')
-                theta = support.theta + np.pi
+                F = Q_(abs(F), self.__u_force)
+                theta = support.theta + Q_(np.pi, 'rad')
             else:
-                F = Q_(F, 'N')
+                F = Q_(F, self.__u_force)
                 theta = support.theta
             force = Force(support.position, F, theta)
         return force
 
-    @staticmethod
-    def __create_reaction_torque(M_z: float) -> Moment:
+    def __create_reaction_torque(self, M_z: float) -> Moment:
         """Creates a `Moment` object from the Sympy solution of a reaction
         torque, when using the `get_reactions` method.
         """
-        M = Moment.create_from_components(M_z=Q_(M_z, 'N * m'))
+        M = Moment.create_from_components(M_z=Q_(M_z, self.__u_moment))
         return M
 
-    @staticmethod
-    def __create_internal_forces(sol_dict: dict[str, sp.Float]) -> dict[str, Quantity]:
+    def __create_internal_forces(self, sol_dict: dict[str, sp.Float]) -> dict[str, Quantity]:
         """Creates a dictionary with the Sympy solutions of the internal forces
         as `Quantity` objects, when using the `cut` method.
         """
@@ -334,9 +339,9 @@ class Beam2D:
             name = str(key)
             value = round(float(value), 12)
             if name == 'M_z':
-                d[name] = Q_(value, 'N * m')
+                d[name] = Q_(value, self.__u_moment)
             else:
-                d[name] = Q_(value, 'N')
+                d[name] = Q_(value, self.__u_force)
         return d
 
     def diagrams_data(self, num: int = 50) -> tuple[Quantity, ...]:

@@ -2,10 +2,8 @@ from __future__ import annotations
 import warnings
 import numpy as np
 import sympy as sp
-from .position import *
-
-
-ORIGIN = (Q_(0, 'm'), Q_(0, 'm'), Q_(0, 'm'))
+from ._position import *
+from ._units import Units
 
 
 class Force:
@@ -94,14 +92,14 @@ class Force:
         return self._F_z
 
     def moment(self, ref_point: Position | None = None) -> Moment:
-        x_act = self.action_point[0].to(self.u_pos)
-        y_act = self.action_point[1].to(self.u_pos)
-        z_act = self.action_point[2].to(self.u_pos)
+        x_act = self.action_point[0].to(self.__u_pos)
+        y_act = self.action_point[1].to(self.__u_pos)
+        z_act = self.action_point[2].to(self.__u_pos)
         if ref_point is not None:
             ref_point = set_position(ref_point)
-            x_ref = ref_point[0].to(self.u_pos)
-            y_ref = ref_point[1].to(self.u_pos)
-            z_ref = ref_point[2].to(self.u_pos)
+            x_ref = ref_point[0].to(self.__u_pos)
+            y_ref = ref_point[1].to(self.__u_pos)
+            z_ref = ref_point[2].to(self.__u_pos)
             x = x_act - x_ref  # distance from force action point to ref. point
             y = y_act - y_ref
             z = z_act - z_ref
@@ -146,16 +144,12 @@ class Force:
         return s
 
     def __set_units(self) -> None:
-        self.u_pos = self.action_point[0].units
-        if isinstance(self.magnitude, Quantity):
-            self.u_force = self.magnitude.units
-        else:
-            self.u_force = Q_(1, 'N').units
-        self.u_moment = self.u_force * self.u_pos
+        self.__u_pos = Units.u_pos
+        self.__u_force = Units.u_force
 
     def __get_magnitude(self, magnitude) -> float | sp.Symbol:
         if isinstance(magnitude, Quantity):
-            F = magnitude.to(self.u_force).m
+            F = magnitude.to(self.__u_force).m
             return F
         elif isinstance(magnitude, str):
             F = sp.Symbol(magnitude)
@@ -183,55 +177,69 @@ class Force:
                 F_xy = 0.0
             elif cos_gamma == 1:
                 F_xy = self._magnitude
+            elif cos_gamma == -1:
+                F_xy = -self._magnitude
             else:
                 F_xy = self._magnitude * cos_gamma
         else:
-            F_xy = sp.Symbol(self.name)
+            F_xy = sp.Symbol(f"{self.name}.xy")
         return F_xy
 
     def __get_component_x(self, F_xy: float | sp.Expr) -> Quantity | sp.Expr:
         F_x = F_xy * sp.cos(self._theta)
         if isinstance(F_x, sp.Number):
-            F_x = Q_(round(float(F_x), 12), self.u_force)
+            F_x = Q_(round(float(F_x), 12), self.__u_force)
         else:
             if isinstance(self._theta, float):
                 cos_theta = round(np.cos(self._theta), 12)
                 if cos_theta == 0:
-                    F_x = Q_(0.0, self.u_force)
+                    F_x = Q_(0.0, self.__u_force)
+                elif cos_theta == 1:
+                    F_x = F_xy
+                elif cos_theta == -1:
+                    F_x = -F_xy
                 else:
                     pass
             else:
-                F_x = sp.Symbol(f"{str(F_xy)}.x")
+                F_x = sp.Symbol(f"{self.name}.x")
         return F_x
 
     def __get_component_y(self, F_xy: float | sp.Expr) -> Quantity | sp.Expr:
         F_y = F_xy * sp.sin(self._theta)
         if isinstance(F_y, sp.Number):
-            F_y = Q_(round(float(F_y), 12), self.u_force)
+            F_y = Q_(round(float(F_y), 12), self.__u_force)
         else:
             if isinstance(self._theta, float):
                 sin_theta = round(np.sin(self._theta), 12)
                 if sin_theta == 0:
-                    F_y = Q_(0.0, self.u_force)
+                    F_y = Q_(0.0, self.__u_force)
+                elif sin_theta == 1:
+                    F_y = F_xy
+                elif sin_theta == -1:
+                    F_y = -F_xy
                 else:
                     pass
             else:
-                F_y = sp.Symbol(f"{str(F_xy)}.y")
+                F_y = sp.Symbol(f"{self.name}.y")
         return F_y
 
     def __get_component_z(self) -> Quantity | sp.Expr:
         F_z = self._magnitude * sp.sin(self._gamma)
         if isinstance(F_z, sp.Number):
-            F_z = Q_(round(float(F_z), 12), self.u_force)
+            F_z = Q_(round(float(F_z), 12), self.__u_force)
         else:
             if isinstance(self._gamma, float):
                 sin_gamma = round(np.sin(self._gamma), 12)
                 if sin_gamma == 0:
-                    F_z = Q_(0.0, self.u_force)
+                    F_z = Q_(0.0, self.__u_force)
+                elif sin_gamma == 1:
+                    F_z = self._magnitude
+                elif sin_gamma == -1:
+                    F_z = -self._magnitude
                 else:
-                    pass
+                    F_z = self._magnitude * sin_gamma
             else:
-                F_z = sp.Symbol(f"{str(self._magnitude)}.z")
+                F_z = sp.Symbol(f"{self.name}.z")
         return F_z
 
     def __get_moment_x(
@@ -242,12 +250,12 @@ class Force:
         F_z: Quantity | sp.Expr
     ) -> Quantity | sp.Expr:
         if not (isinstance(F_y, Quantity) and isinstance(F_z, Quantity)):
-            z = z.to(self.u_pos).m
-            y = y.to(self.u_pos).m
+            z = z.to(self.__u_pos).m
+            y = y.to(self.__u_pos).m
             if isinstance(F_y, Quantity):
-                F_y = F_y.to(self.u_force).m
+                F_y = F_y.to(self.__u_force).m
             if isinstance(F_z, Quantity):
-                F_z = F_z.to(self.u_force).m
+                F_z = F_z.to(self.__u_force).m
         M_x = -z * F_y + y * F_z
         return M_x
 
@@ -259,12 +267,12 @@ class Force:
         F_z: Quantity | sp.Expr
     ) -> Quantity | sp.Expr:
         if not (isinstance(F_x, Quantity) and isinstance(F_z, Quantity)):
-            x = x.to(self.u_pos).m
-            z = z.to(self.u_pos).m
+            x = x.to(self.__u_pos).m
+            z = z.to(self.__u_pos).m
             if isinstance(F_x, Quantity):
-                F_x = F_x.to(self.u_force).m
+                F_x = F_x.to(self.__u_force).m
             if isinstance(F_z, Quantity):
-                F_z = F_z.to(self.u_force).m
+                F_z = F_z.to(self.__u_force).m
         M_y = z * F_x - x * F_z
         return M_y
 
@@ -276,12 +284,12 @@ class Force:
         F_y: Quantity | sp.Expr
     ) -> Quantity | sp.Expr:
         if not (isinstance(F_x, Quantity) and isinstance(F_y, Quantity)):
-            x = x.to(self.u_pos).m
-            y = y.to(self.u_pos).m
+            x = x.to(self.__u_pos).m
+            y = y.to(self.__u_pos).m
             if isinstance(F_x, Quantity):
-                F_x = F_x.to(self.u_force).m
+                F_x = F_x.to(self.__u_force).m
             if isinstance(F_y, Quantity):
-                F_y = F_y.to(self.u_force).m
+                F_y = F_y.to(self.__u_force).m
         M_z = -y * F_x + x * F_y
         return M_z
 
@@ -399,15 +407,12 @@ class Moment:
         return s
 
     def __set_units(self) -> None:
-        self.u_pos = self.action_point[0].units
-        if isinstance(self.magnitude, Quantity):
-            self.u_moment = self.magnitude.units
-        else:
-            self.u_moment = Q_(1, 'N * m').units
+        self.__u_pos = Units.u_pos
+        self.__u_moment = Units.u_moment
 
     def __get_magnitude(self, magnitude) -> float | sp.Symbol:
         if isinstance(magnitude, Quantity):
-            M = magnitude.to(self.u_moment).m
+            M = magnitude.to(self.__u_moment).m
         elif isinstance(magnitude, str):
             M = sp.Symbol(magnitude)
         else:
@@ -443,12 +448,12 @@ class Moment:
     def __get_component_x(self, M_xy: float | sp.Expr) -> Quantity | sp.Expr:
         M_x = M_xy * sp.cos(self._theta)
         if isinstance(M_x, sp.Number):
-            M_x = Q_(float(M_x), self.u_moment)
+            M_x = Q_(float(M_x), self.__u_moment)
         else:
             if isinstance(self._theta, float):
                 cos_theta = round(np.cos(self._theta), 12)
                 if cos_theta == 0:
-                    M_x = Q_(0.0, self.u_moment)
+                    M_x = Q_(0.0, self.__u_moment)
                 else:
                     pass
             else:
@@ -458,12 +463,12 @@ class Moment:
     def __get_component_y(self, M_xy: float | sp.Expr) -> Quantity | sp.Expr:
         M_y = M_xy * sp.sin(self._theta)
         if isinstance(M_y, sp.Number):
-            M_y = Q_(float(M_y), self.u_moment)
+            M_y = Q_(float(M_y), self.__u_moment)
         else:
             if isinstance(self._theta, float):
                 sin_theta = round(np.sin(self._theta), 12)
                 if sin_theta == 0:
-                    M_y = Q_(0.0, self.u_moment)
+                    M_y = Q_(0.0, self.__u_moment)
                 else:
                     pass
             else:
@@ -473,12 +478,12 @@ class Moment:
     def __get_component_z(self) -> Quantity | sp.Expr:
         M_z = self._magnitude * sp.sin(self._gamma)
         if isinstance(M_z, sp.Number):
-            M_z = Q_(float(M_z), self.u_moment)
+            M_z = Q_(float(M_z), self.__u_moment)
         else:
             if isinstance(self._gamma, float):
                 sin_gamma = round(np.sin(self._gamma), 12)
                 if sin_gamma == 0:
-                    M_z = Q_(0.0, self.u_moment)
+                    M_z = Q_(0.0, self.__u_moment)
                 else:
                     pass
             else:

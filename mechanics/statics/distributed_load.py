@@ -3,11 +3,12 @@ from scipy.interpolate import interp1d
 from scipy.integrate import quad
 from mechanics import Quantity
 from .force import Force
+from ._units import Units
 
 Q_ = Quantity
 
 
-class DistributedLoad2D:
+class DistributedLoad1D:
     """
     A distributed piece-wise linear load acting perpendicular to a 2D-beam.
     """
@@ -43,14 +44,14 @@ class DistributedLoad2D:
         `x1` and `x2` along the x-axis of the beam (with `x2` > `x1`).
         """
         x1 = (
-            x1.to(self.u_pos).m
+            x1.to(self.__u_pos).m
             if x1 is not None
-            else self.points[0][0].to(self.u_pos).m
+            else self.points[0][0].to(self.__u_pos).m
         )
         x2 = (
-            x2.to(self.u_pos).m
+            x2.to(self.__u_pos).m
             if x2 is not None
-            else self.points[-1][0].to(self.u_pos).m
+            else self.points[-1][0].to(self.__u_pos).m
         )
         if x2 > x1:
             # noinspection PyTypeChecker
@@ -65,12 +66,13 @@ class DistributedLoad2D:
         return Q
 
     def __set_units(self) -> None:
-        self.u_pos = self.points[0][0].units
-        self.u_load = self.points[0][1].units
+        self.__u_pos = Units.u_pos
+        self.__u_load = Units.u_distributed_1D_load
+        self.__u_force = Units.u_force
 
     def __create_load_interpolant(self):
         x_data, q_data = zip(*[
-            (x.to(self.u_pos).m, q.to(self.u_load).m)
+            (x.to(self.__u_pos).m, q.to(self.__u_load).m)
             for x, q in self.points
         ])
         self.q_x = interp1d(x_data, q_data)
@@ -84,8 +86,8 @@ class DistributedLoad2D:
         else:
             theta = Q_(0, 'deg')
         Q = Force(
-            action_point=(Q_(x_c, self.u_pos), Q_(0, self.u_pos)),
-            magnitude=Q_(Q, self.u_pos * self.u_load),
+            action_point=(Q_(x_c, self.__u_pos), Q_(0, self.__u_pos)),
+            magnitude=Q_(Q, self.__u_force),
             theta=theta
         )
         return Q

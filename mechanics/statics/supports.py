@@ -3,7 +3,7 @@ from enum import IntEnum, StrEnum
 import numpy as np
 import sympy as sp
 from mechanics import Quantity
-from .position import Position, set_position
+from ._position import Position, set_position
 
 
 Q_ = Quantity
