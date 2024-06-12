@@ -9,21 +9,6 @@ from ._position import Position, set_position
 Q_ = Quantity
 
 
-class Sign(IntEnum):
-    NEGATIVE = -1
-    POSITIVE = 1
-    ZERO = 0
-
-
-class Component(StrEnum):
-    F_x = 'F_x'
-    F_y = 'F_y'
-    F_z = 'F_z'
-    M_x = 'M_x'
-    M_y = 'M_y'
-    M_z = 'M_z'
-
-
 class Support(ABC):
     """Abstract base class that represents a generic beam support that applies
     unknown reaction forces to a beam.
