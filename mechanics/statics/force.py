@@ -3,7 +3,7 @@ import warnings
 import numpy as np
 import sympy as sp
 from ._position import *
-from ._units import Units
+from .units import Units
 
 
 class Force:

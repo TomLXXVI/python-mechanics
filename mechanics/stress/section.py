@@ -45,13 +45,13 @@ class Section:
     def sigma_avg(self) -> Quantity:
         if isinstance(self.shape, Shape):
             ns = NormalStress(self.N, A=self.shape.area())
-            return ns.sigma_avg
+            return ns.average
 
     @property
     def tau_avg(self) -> Quantity:
         if isinstance(self.shape, Shape):
             ss = ShearStress(self.V, A=self.shape.area())
-            return ss.tau_avg
+            return ss.average
 
     def design(
         self,

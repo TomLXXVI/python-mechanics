@@ -5,7 +5,7 @@ from mechanics import Quantity
 from .force import Force, Moment
 from .supports import Support
 from .distributed_load import DistributedLoad1D
-from ._units import Units
+from .units import Units
 
 Q_ = Quantity
 

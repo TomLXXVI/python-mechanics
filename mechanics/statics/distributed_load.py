@@ -3,7 +3,7 @@ from scipy.interpolate import interp1d
 from scipy.integrate import quad
 from mechanics import Quantity
 from .force import Force
-from ._units import Units
+from .units import Units
 
 Q_ = Quantity
 

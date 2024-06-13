@@ -21,6 +21,13 @@ class Stress:
             self._A = self.__calculate_area(self.F_mag, stress_allow, stress_fail, safety_factor)
             self._stress_avg = self.__calculate_avg_stress(self.F_mag, self._A)
 
+    def design(self) -> Quantity:
+        return self._A
+
+    @property
+    def average(self) -> Quantity:
+        return self._stress_avg
+
     @staticmethod
     def __calculate_avg_stress(F_mag: Quantity, A: Quantity) -> Quantity:
         return F_mag / A
@@ -36,6 +43,3 @@ class Stress:
             stress_allow = stress_fail / safety_factor
         A = F_mag / stress_allow
         return A
-
-    def design(self) -> Quantity:
-        return self._A

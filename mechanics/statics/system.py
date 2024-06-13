@@ -2,7 +2,7 @@ import sympy as sp
 from mechanics import Quantity
 from .force import Force, Moment, Torque
 from .distributed_load import DistributedLoad1D
-from ._units import Units
+from .units import Units
 
 Q_ = Quantity
 

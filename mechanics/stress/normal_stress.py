@@ -13,7 +13,3 @@ class NormalStress(Stress):
         A: Quantity | None = None
     ) -> None:
         super().__init__(N, sigma_allow, sigma_fail, safety_factor, A)
-
-    @property
-    def sigma_avg(self) -> Quantity:
-        return self._stress_avg
