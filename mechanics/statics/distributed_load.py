@@ -10,14 +10,15 @@ Q_ = Quantity
 
 class DistributedLoad1D:
     """
-    A distributed piece-wise linear load acting perpendicular to a 2D-beam.
+    A distributed, piece-wise linear load acting perpendicular to a 2D-beam.
     """
     def __init__(
         self,
         points: Sequence[tuple[Quantity, Quantity]],
         name: str = ''
     ) -> None:
-        """Creates a `DistributedLoad2D` instance.
+        """
+        Creates a `DistributedLoad2D` instance.
 
         Parameters
         ----------

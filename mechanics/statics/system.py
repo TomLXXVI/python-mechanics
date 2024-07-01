@@ -193,11 +193,21 @@ class System:
     ) -> Torque:
         M_mag = component_dict.get('magnitude', None)
         if M_mag is not None:
+            if M_mag < 0:
+                M_mag = abs(M_mag)
+                theta = unknown_torque.theta + Q_(180, 'deg')
+                if unknown_torque.gamma.m != 0:
+                    gamma = unknown_torque.gamma + Q_(180, 'deg')
+                else:
+                    gamma = unknown_torque.gamma
+            else:
+                theta = unknown_torque.theta
+                gamma = unknown_torque.gamma
             solved_torque = Torque(
                 action_point=unknown_torque.action_point,
                 magnitude=Q_(M_mag, self.__u_moment),
-                theta=unknown_torque.theta,
-                gamma=unknown_torque.gamma,
+                theta=theta,
+                gamma=gamma,
                 name=name
             )
             return solved_torque
