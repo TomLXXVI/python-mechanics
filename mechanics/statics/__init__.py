@@ -1,5 +1,2 @@
-from .beam import Beam2D
-from .distributed_load import DistributedLoad1D
-from .force import Force, Moment, Torque
-from .supports import Hinge2D, Roller2D, FixedEnd2D, TwoForceMember2D
-from .system import System
+from .vector import Position, Angle, Force, Moment, DistributedLoad1D
+from .system import System, Beam

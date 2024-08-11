@@ -2,6 +2,7 @@ import pint
 
 UNITS = pint.UnitRegistry()
 Quantity = UNITS.Quantity
+Unit = pint.Unit
 
 unit_definitions = [
     'fraction = [] = frac',
