@@ -267,7 +267,12 @@ class _Case4(_Case):
 
 
 class ElasticCurve:
-
+    """
+    Determine the deflection and slope of beams and shafts.
+    Assumptions: the beam is initially straight, it is elastically deformed by
+    the loads, such that the slope and deflection of the elastic curve are
+    very small, and the deformations are only caused by bending.
+    """
     def __init__(
         self,
         M: Callable[[Quantity], Quantity],
@@ -276,9 +281,34 @@ class ElasticCurve:
         boundary_conditions: list[BoundaryCondition],
         num_intervals: int = 50
     ) -> None:
+        """Creates an `ElasticCurve` object.
+
+        Parameters
+        ----------
+        M:
+            Function that takes the position `x` along the beam and returns the
+            resultant internal bending moment in the cross-section of the beam
+            at this position.
+        E:
+            Modulus of elasticity of the material.
+        I:
+            Area moment of inertia of the cross-section about the neutral axis.
+        boundary_conditions:
+            List of boundary conditions (instances of class `BoundaryCondition`)
+            where the vertical displacement and/or slope of the elastic curve
+            are fixed, i.e. at the beam supports. In case of a roller or hinge
+            the vertical displacement is zero, but the slope is unknown. In case
+            of a fixed end the slope is also zero. In case of a free end, both
+            the vertical displacement and the slope are unknown.
+        num_intervals:
+            Number of intervals where the differential equation of the elastic
+            curve is to be evaluated.
+        """
         self.M = M
         self.E = E
         self.I = I
+        # make sure boundary conditions are sorted from left to right along the
+        # longitudinal axis of the beam
         self.bound_conds = sorted(boundary_conditions, key=lambda bc: bc.x)
         self.num_intervals = self._n = num_intervals
 
@@ -286,11 +316,17 @@ class ElasticCurve:
         _E = self.E.to('Pa').magnitude
         _I = self.I.to('m**4').magnitude
 
+        # group boundary conditions in pairs
         self.bound_conds_grouped = [
             (self.bound_conds[i], self.bound_conds[i + 1])
             for i in range(len(self.bound_conds) - 1)
         ]
 
+        # between each pair of boundary conditions, the elastic curve is
+        # calculated (vertical displacement and slope); depending on the
+        # boundary conditions, 4 different cases can be distinguished that
+        # require a different method to solve the differential equation of the
+        # elastic curve
         x, y, theta = [], [], []
         for group in self.bound_conds_grouped:
             bc1, bc2 = group
@@ -335,9 +371,9 @@ class ElasticCurve:
 
         self._y_interp = interp1d(x, y)
         self._theta_interp = interp1d(x, theta)
-        self.x = Q_(x, 'm')
-        self.y = Q_(y, 'm')
-        self.theta = Q_(theta, 'rad')
+        self.x = Q_(x, 'm')  # array of positions where vertical displacement and slope are evaluated.
+        self.y = Q_(y, 'm')  # array of vertical displacements
+        self.theta = Q_(theta, 'rad')  # array of slopes
 
     def __create_M_function(self) -> Callable[[float], float]:
         def M(x: float) -> float:
@@ -348,14 +384,23 @@ class ElasticCurve:
         return M
 
     def displacement(self, x: Quantity) -> Quantity:
+        """Returns the vertical displacement of the elastic curve at
+        position `x`.
+        """
         y = self._y_interp(x.to('m').magnitude)
         return Q_(y, 'm')
 
     def slope(self, x: Quantity) -> Quantity:
+        """Returns the slope of the elastic curve at position `x`."""
         theta = self._theta_interp(x.to('m').magnitude)
         return Q_(theta, 'rad')
 
     def diagram(self, units: tuple[str, str] = ('m', 'mm')) -> LineChart:
+        """Returns a `LineChart` object with a diagram of the elastic curve.
+        Through parameter `units` the display units can be set for the position
+        `x` along the longitudinal axis of the beam and for the vertical
+        displacement of the elastic curve.
+        """
         diagram = LineChart()
         diagram.add_xy_data(
             label='elastic curve',
