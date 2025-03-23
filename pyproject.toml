@@ -5,10 +5,10 @@ description = ""
 license = "MIT"
 authors = ["Tom Christiaens <tom.chr@proximus.be>"]
 readme = "README.md"
-packages = [{include = "python_mechanics"}]
+packages = [{include = "mechanics"}]
 
 [tool.poetry.dependencies]
-python = "^3.12"
+python = "^3.11"
 pint = "^0.24"
 numpy = "^1.26.4"
 matplotlib = "^3.8.4"

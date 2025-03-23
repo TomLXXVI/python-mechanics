@@ -10,22 +10,23 @@ from .vector import Force, Moment, DistributedLoad1D, Angle, Position
 Q_ = Quantity
 
 
+# noinspection PyShadowingNames
 class System:
-    """Solves a system of forces and/or moments acting on a arbitrary body for
+    """Solves a system of forces and/or moments acting on an arbitrary body for
     the unknown forces and/or moments such that static equilibrium of the body
     is preserved.
 
     Notes
     -----
-    In case of a 3D system, there are 6 equations available, so the system cannot
-    have more than 6 unknowns (magnitude and/or direction).
-    In case of a 2D system, there are only 3 equations available, so the system
-    cannot have more 3 unknowns.
+    -   In the case of a 3D system, there are 6 equations available, so the 
+        system cannot have more than 6 unknowns (magnitude and/or direction).
+    -   In the case of a 2D system, there are only 3 equations available, so the 
+        system cannot have more 3 unknowns.
     """
-    _units_of_force = 'N'
-    _units_of_moment = 'N * m'
-    _units_of_length = 'm'
-    _units_of_load = 'N / m'
+    _uF = 'N'
+    _uM = 'N * m'
+    _uL = 'm'
+    _uF_per_L = 'N / m'
 
     def __init__(
         self,
@@ -33,12 +34,12 @@ class System:
         units: tuple[str, str] | None = None
     ) -> None:
         """Creates a `System` object of which the loadings can be forces,
-        moments (moments), or distributed linear loads.
+        moments, or distributed linear loads.
 
         Parameters
         ----------
         loadings:
-            List with the forces, moments (moments) and distributed loads acting
+            List with the forces, moments, and distributed loads acting
             on the body.
         units:
             Tuple of two strings. The first string contains the units of force
@@ -47,10 +48,10 @@ class System:
             'm', meters). If `units` is left to `None`, the default units are
             used.
             From the given units of force and of length, the units of
-            distributed loads and of moments (moments) are derived.
+            distributed loads and of moments are derived.
             Note that the units are set at class level, i.e. when the units are
             set on one `System` object, they will be inherited as default units
-            when instantiating other subsequent `System` objects.
+            when instantiating new `System` objects.
 
         Notes
         -----
@@ -60,44 +61,44 @@ class System:
         """
         if isinstance(units, tuple):
             self.__class__.units(units[0], units[1])
-        self.external_forces: dict[str, Force] = self.__get_external_forces(*loadings)
-        self.external_moments: dict[str, Moment] = self.__get_external_moments(*loadings)
-        self.external_distributed_loads: dict[str, DistributedLoad1D] = self.__get_external_distributed_loads(*loadings)
+        self.ext_forces: dict[str, Force] = self.__get_ext_forces(*loadings)
+        self.ext_moments: dict[str, Moment] = self.__get_ext_moments(*loadings)
+        self.ext_distrib_loads: dict[str, DistributedLoad1D] = self.__get_ext_distrib_loads(*loadings)
 
-    def __get_external_forces(self, *loadings) -> dict[str, Force]:
+    def __get_ext_forces(self, *loadings) -> dict[str, Force]:
         forces = [
-            f.to(self._units_of_force)  # all forces must have the same units
+            f.to(self._uF)  # all forces must have the same units
             for f in loadings
             if isinstance(f, Force)
         ]
-        for force in forces: force.position.to(self._units_of_length)  # all positions must have the same units
+        for force in forces: force.position.to(self._uL)  # all positions must have the same units
         forces = {f.name: f for f in forces}
         return forces
 
-    def __get_external_moments(self, *loadings) -> dict[str, Moment]:
+    def __get_ext_moments(self, *loadings) -> dict[str, Moment]:
         moments = [
-            m.to(self._units_of_moment)  # all moments must have the same units
+            m.to(self._uM)  # all moments must have the same units
             for m in loadings
             if isinstance(m, Moment)
         ]
-        for moment in moments: moment.position.to(self._units_of_length)  # all positions must have the same units
+        for moment in moments: moment.position.to(self._uL)  # all positions must have the same units
         moments = {t.name: t for t in moments}
         return moments
 
-    def __get_external_distributed_loads(self, *loadings) -> dict[str, DistributedLoad1D]:
+    def __get_ext_distrib_loads(self, *loadings) -> dict[str, DistributedLoad1D]:
         distributed_loads = [
-            dl.to(self._units_of_load)  # all loads must have the same units
+            dl.to(self._uF_per_L)  # all loads must have the same units
             for dl in loadings
             if isinstance(dl, DistributedLoad1D)
         ]
-        for dl in distributed_loads: dl.positions(self._units_of_length)  # all positions must have the same units
+        for dl in distributed_loads: dl.positions(self._uL)  # all positions must have the same units
         distributed_loads = {dl.name: dl for dl in distributed_loads}
         return distributed_loads
 
     def __contains_unknowns(self) -> bool:
         # Checks if there are any unknown forces/moments acting on the body.
-        loadings = list(self.external_forces.values())
-        loadings.extend(self.external_moments.values())
+        loadings = list(self.ext_forces.values())
+        loadings.extend(self.ext_moments.values())
         for load in loadings:
             if load.is_symbolic():
                 return True
@@ -108,19 +109,19 @@ class System:
         """Sets the units of force and of length to be used when instantiating
         a `System` object.
         """
-        cls._units_of_force = units_of_force
-        cls._units_of_length = units_of_length
-        cls._units_of_moment = f"{units_of_force} * {units_of_length}"
-        cls._units_of_load = f"{units_of_force} / {units_of_length}"
+        cls._uF = units_of_force
+        cls._uL = units_of_length
+        cls._uM = f"{units_of_force} * {units_of_length}"
+        cls._uF_per_L = f"{units_of_force} / {units_of_length}"
 
     def solve(self) -> dict[str, Force | Moment] | None:
-        """Solves the system for any unknown forces and/or moments (moments).
+        """Solves the system for any unknown forces and/or moments.
 
         Returns
         -------
         A dictionary of which the keys are the names of the forces or moments
         and the values are the corresponding `Force` or `Moment` objects.
-        Returns `None` if there are no unknown forces and/or moments (moments)
+        Returns `None` if there are no unknown forces and/or moments
         acting on the body.
         """
         if self.__contains_unknowns():
@@ -164,9 +165,9 @@ class System:
             components.extend(list(resultant.moment().component_values))
             __add_components_to_dict(keys, components)
 
-        for force in self.external_forces.values(): __decompose_force(force)
-        for moment in self.external_moments.values(): __decompose_moment(moment)
-        for distr_load in self.external_distributed_loads.values(): __decompose_distributed_load(distr_load)
+        for force in self.ext_forces.values(): __decompose_force(force)
+        for moment in self.ext_moments.values(): __decompose_moment(moment)
+        for distr_load in self.ext_distrib_loads.values(): __decompose_distributed_load(distr_load)
         return components_dict
 
     @staticmethod
@@ -177,7 +178,7 @@ class System:
             if unknown == 0:
                 return None
             else:
-                known = sum(value for value in d['known'])
+                known = round(sum(value for value in d['known']), 9)
                 eq = sp.Eq(unknown + known, 0)
                 return eq
 
@@ -217,8 +218,8 @@ class System:
                 else:
                     solutions[name] = {component: solution}
 
-        unknowns = {f.name: f for f in self.external_forces.values() if f.is_symbolic()}
-        unknowns.update({t.name: t for t in self.external_moments.values() if t.is_symbolic()})
+        unknowns = {f.name: f for f in self.ext_forces.values() if f.is_symbolic()}
+        unknowns.update({t.name: t for t in self.ext_moments.values() if t.is_symbolic()})
 
         def __create_vector(
             name: str,
@@ -272,9 +273,9 @@ class System:
         # Replaces the unknown forces or moments with their solution.
         for name, sol in solutions.items():
             if isinstance(sol, Force):
-                self.external_forces[name] = sol
+                self.ext_forces[name] = sol
             if isinstance(sol, Moment):
-                self.external_moments[name] = sol
+                self.ext_moments[name] = sol
         return None
 
 
@@ -308,7 +309,7 @@ class Beam(System):
             'm', meters). If `units` is left to `None`, the default units are
             used.
             From the given units of force and of length, the units of
-            distributed loads and of moments (moments) are derived.
+            distributed loads and of moments are derived.
             Note that the units are set at class level, i.e. when the units are
             set on one `Beam` object, they will be inherited as default units
             when instantiating other subsequent `Beam` objects.
@@ -326,7 +327,7 @@ class Beam(System):
         super().__init__(loadings, units)
         self.length = length
         self.num_sections = num_sections
-        self._length: float = length.to(self._units_of_length).m
+        self._length: float = length.to(self._uL).m
         # Solve for any unknown external reaction forces and/or moments:
         self.solve()
         # Create profiles of the resultant internal loadings along the
@@ -360,7 +361,7 @@ class Beam(System):
         Tuple with the internal force (`Force`-object) and internal moment
         (`Moment`-object) acting at the viewed cross-section.
         """
-        x = x.to(self._units_of_length).m
+        x = x.to(self._uL).m
         y = 0.0
         z = 0.0
         if view == 'left':
@@ -372,29 +373,29 @@ class Beam(System):
 
         # List with the external forces between `x_min` and `x_max`.
         forces = []
-        for force in self.external_forces.values():
+        for force in self.ext_forces.values():
             # noinspection PyProtectedMember
             if x_min <= force.position._x <= x_max:
                 forces.append(force)
 
         # Add resultants of distributed linear loads between x_min and x_max
         # to the list of forces.
-        for distr_load in self.external_distributed_loads.values():
+        for distr_load in self.ext_distrib_loads.values():
             x1 = distr_load.x_coords[0].m
             x2 = distr_load.x_coords[-1].m
             if x1 >= x_min and x2 <= x_max:
-                force = distr_load.resultant().to(self._units_of_force)
+                force = distr_load.resultant().to(self._uF)
                 forces.append(force)
             elif x1 < x_max < x2:
-                force = distr_load.resultant(x1, x_max).to(self._units_of_force)
+                force = distr_load.resultant(x1, x_max).to(self._uF)
                 forces.append(force)
             elif x1 < x_min < x2:
-                force = distr_load.resultant(x_min, x2).to(self._units_of_force)
+                force = distr_load.resultant(x_min, x2).to(self._uF)
                 forces.append(force)
 
         # List with the external moments between x_min and x_max.
         moments = []
-        for moment in self.external_moments.values():
+        for moment in self.ext_moments.values():
             # noinspection PyProtectedMember
             if x_min <= moment.position._x <= x_max:
                 moments.append(moment)
@@ -452,13 +453,13 @@ class Beam(System):
         # Create `Force` and `Moment` objects:
         int_F = Force.create_from_components(
             int_F_x, int_F_y, int_F_z,
-            position=Position(x, y, z, units=self._units_of_length),
-            units=self._units_of_force,
+            position=Position(x, y, z, units=self._uL),
+            units=self._uF,
         )
         int_M = Moment.create_from_components(
             int_M_x, int_M_y, int_M_z,
-            position=Position(x, y, z, units=self._units_of_length),
-            units=self._units_of_moment
+            position=Position(x, y, z, units=self._uL),
+            units=self._uM
         )
         return int_F, int_M
 
@@ -469,7 +470,7 @@ class Beam(System):
         # forces and bending moments.
         x_arr = Q_(
             np.linspace(0.0, self._length, self.num_sections, endpoint=True),
-            self._units_of_length
+            self._uL
         )
         if self.num_sections <= 350:
             int_F_lst, int_M_lst = zip(*[self.cut(x) for x in x_arr])
@@ -498,8 +499,8 @@ class Beam(System):
             y1_values=self._V_arr,
             style_props={'drawstyle': 'steps-post'}
         )
-        diagram.x1.add_title(f"x, {self._units_of_length}")
-        diagram.y1.add_title(f"shear force, {self._units_of_force}")
+        diagram.x1.add_title(f"x, {self._uL}")
+        diagram.y1.add_title(f"shear force, {self._uF}")
         return diagram
 
     @property
@@ -514,8 +515,8 @@ class Beam(System):
             y1_values=self._M_arr,
             style_props={'drawstyle': 'steps-post'}
         )
-        diagram.x1.add_title(f"x, {self._units_of_length}")
-        diagram.y1.add_title(f"bending moment, {self._units_of_moment}")
+        diagram.x1.add_title(f"x, {self._uL}")
+        diagram.y1.add_title(f"bending moment, {self._uM}")
         return diagram
 
     @property
@@ -530,8 +531,8 @@ class Beam(System):
             y1_values=self._N_arr,
             style_props={'drawstyle': 'steps-post'}
         )
-        diagram.x1.add_title(f"x, {self._units_of_length}")
-        diagram.y1.add_title(f"normal force, {self._units_of_force}")
+        diagram.x1.add_title(f"x, {self._uL}")
+        diagram.y1.add_title(f"normal force, {self._uF}")
         return diagram
 
     @property
@@ -544,8 +545,8 @@ class Beam(System):
             y1_values=self._T_arr,
             style_props={'drawstyle': 'steps-post'}
         )
-        diagram.x1.add_title(f"x, {self._units_of_length}")
-        diagram.y1.add_title(f"torque, {self._units_of_moment}")
+        diagram.x1.add_title(f"x, {self._uL}")
+        diagram.y1.add_title(f"torque, {self._uM}")
         return diagram
 
     def V(self, x: Quantity) -> Quantity:
@@ -553,32 +554,32 @@ class Beam(System):
          section at position `x` (`Quantity` object) along the longitudinal axis
         of the beam (determined by linear interpolation).
         """
-        V = self._V_interp(x.to(self._units_of_length).m)
-        return Q_(V, self._units_of_force)
+        V = self._V_interp(x.to(self._uL).m)
+        return Q_(V, self._uF)
 
     def M(self, x: Quantity) -> Quantity:
         """Returns the resultant internal bending moment (`Quantity` object) at
         the section at position `x` (`Quantity` object) along the longitudinal
         axis of the beam (determined by linear interpolation).
         """
-        M = self._M_interp(x.to(self._units_of_length).m)
-        return Q_(M, self._units_of_moment)
+        M = self._M_interp(x.to(self._uL).m)
+        return Q_(M, self._uM)
 
     def N(self, x: Quantity) -> Quantity:
         """Returns the resultant internal normal force (`Quantity` object) at
         the section at position `x` (`Quantity` object) along the longitudinal
         axis of the beam (determined by linear interpolation).
         """
-        N = self._N_interp(x.to(self._units_of_length).m)
-        return Q_(N, self._units_of_force)
+        N = self._N_interp(x.to(self._uL).m)
+        return Q_(N, self._uF)
 
     def T(self, x: Quantity) -> Quantity:
         """Returns the resultant internal torque (`Quantity` object) at the
         section at position `x` (`Quantity` object) along the longitudinal
         axis of the beam (determined by linear interpolation).
         """
-        T = self._T_interp(x.to(self._units_of_length).m)
-        return Q_(T, self._units_of_moment)
+        T = self._T_interp(x.to(self._uL).m)
+        return Q_(T, self._uM)
 
     def V_max(self) -> tuple[Quantity, Quantity]:
         """Returns a 2-tuple: the first element is the x-position (`Quantity`
@@ -593,7 +594,7 @@ class Beam(System):
             V_max = V_min
             i = np.argmin(self._V_arr)
         x = self._x_arr[i]
-        return Q_(x, self._units_of_length), Q_(V_max, self._units_of_force)
+        return Q_(x, self._uL), Q_(V_max, self._uF)
 
     def M_max(self) -> tuple[Quantity, Quantity]:
         """Returns a 2-tuple: the first element is the x-position (`Quantity`
@@ -608,7 +609,7 @@ class Beam(System):
             M_max = M_min
             i = np.argmin(self._M_arr)
         x = self._x_arr[i]
-        return Q_(x, self._units_of_length), Q_(M_max, self._units_of_moment)
+        return Q_(x, self._uL), Q_(M_max, self._uM)
 
     def N_max(self) -> tuple[Quantity, Quantity]:
         """Returns a 2-tuple: the first element is the x-position (`Quantity`
@@ -623,7 +624,7 @@ class Beam(System):
             N_max = N_min
             i = np.argmin(self._N_arr)
         x = self._x_arr[i]
-        return Q_(x, self._units_of_length), Q_(N_max, self._units_of_force)
+        return Q_(x, self._uL), Q_(N_max, self._uF)
 
     def T_max(self) -> tuple[Quantity, Quantity]:
         """Returns a 2-tuple: the first element is the x-position (`Quantity`
@@ -638,4 +639,4 @@ class Beam(System):
             T_max = T_min
             i = np.argmin(self._T_arr)
         x = self._x_arr[i]
-        return Q_(x, self._units_of_length), Q_(T_max, self._units_of_moment)
+        return Q_(x, self._uL), Q_(T_max, self._uM)

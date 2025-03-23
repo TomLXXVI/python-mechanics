@@ -25,7 +25,7 @@ class Bending:
             Components of the resultant internal bending moment at the
             cross-section.
             If only one component is given, it is assumed to be the bending
-            moment about about the horizontal axis of the cross-section.
+            moment about the horizontal axis of the cross-section.
             If two components are given, the second component must be the
             bending moment about the vertical axis of the cross-section.
         shape:
@@ -56,6 +56,7 @@ class Bending:
         value indicates a compression stress (see notes about the right-handed
         coordinate system).
         """
+        # Transform the coordinates to the principal axes:
         z_acc, y_acc = self._rot((z, y))
         sigma = -self._M_maj * y_acc / self._I_maj
         sigma += self._M_min * z_acc / self._I_min

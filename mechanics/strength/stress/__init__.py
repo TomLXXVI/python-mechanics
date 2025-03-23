@@ -5,3 +5,4 @@ from .bending import Bending
 from .transverse_shear import TransverseShear
 from .stress_transformation import PlaneStressTransformation
 from .failure import VonMisesYieldCriterion, MohrsFailureCriterion
+from .fatigue import Fatigue

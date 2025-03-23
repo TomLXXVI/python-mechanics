@@ -1,7 +1,7 @@
 # Demo based on example 6.15 from Hibbeler, R. C. (2017). Mechanics of Materials
 # in SI Units, 10th Edition.
 
-# The rectangular cross section shown in [Fig. 6–33a] is subjected to a bending
+# The rectangular cross-section shown in [Fig. 6–33a] is subjected to a bending
 # moment of M = 12 kN*m. Determine the normal stress developed at each corner of
 # the section, and specify the orientation of the neutral axis.
 

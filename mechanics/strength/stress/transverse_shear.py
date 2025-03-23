@@ -92,7 +92,7 @@ class TransverseShear:
     @staticmethod
     def __create_line_segments(
         polygon: Polygon | HollowPolygon
-    ) -> list[LineSegment]:
+    ) -> list[LineSegment] | None:
         if isinstance(polygon, Polygon):
             segments = TransverseShear.__create_polygon_line_segments(polygon)
             return segments

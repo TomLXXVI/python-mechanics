@@ -31,8 +31,8 @@ beam = Beam(
     length=Q_(3, 'm'),
     loadings=[R_A, M_A, q]
 )
-print(beam.external_forces['R_A'])
-print(beam.external_moments['M_A'])
+print(beam.ext_forces['R_A'])
+print(beam.ext_moments['M_A'])
 
 beam.shear_diagram.show()
 beam.moment_diagram.show()

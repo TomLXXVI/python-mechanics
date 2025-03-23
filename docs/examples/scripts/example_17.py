@@ -3,7 +3,7 @@
 
 # The solid shaft and tube shown in [Fig. 5–8] are made of a material having an
 # allowable shear stress of 75 MPa. Determine the maximum torque that can be
-# applied to each cross section, and show the stress acting on a small element
+# applied to each cross-section, and show the stress acting on a small element
 # of material at point A of the shaft, and points B and C of the tube.
 
 from mechanics import Quantity
@@ -24,7 +24,7 @@ print(f"{r.to('mm'):~P.0f}")
 
 
 # Maximum allowable torque of tube
-tube = Annulus(radius_in=Q_(75, 'mm'), radius_out=Q_(100, 'mm'))
+tube = Annulus(outer_radius=Q_(100, 'mm'), thickness=Q_(25, 'mm'))
 T_max_tube = Torsion.allowable_torque(tube, tau_allow=Q_(75, 'MPa'))
 print(f"{T_max_tube.to('kN * m'):~P.1f}")
 

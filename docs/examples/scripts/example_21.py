@@ -3,7 +3,7 @@
 
 # The simply supported beam in [Fig. 6–26a] has the cross-sectional area shown in
 # [Fig. 6–26b]. Determine the absolute maximum bending stress in the beam and draw
-# the stress distribution over the cross section at this location. Also, what is
+# the stress distribution over the cross-section at this location. Also, what is
 # the stress at point B?
 
 from mechanics import Quantity

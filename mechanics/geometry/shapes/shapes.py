@@ -94,7 +94,7 @@ class Polygon(Shape):
             A sequence of the vertices of the polygon in consecutive
             counter-clockwise order. The vertices are `Quantity` objects like
             `Q_([x, y], 'm')` with x and y the horizontal and vertical
-            coordinate of a vertex referred to a orthogonal, right-handed
+            coordinate of a vertex referred to an orthogonal, right-handed
             coordinate system.
         dim:
             Main dimensions of the polygon.

@@ -13,7 +13,8 @@ Q_ = Quantity
 
 
 class Position:
-    """Represents a position in 3D space.
+    """Represents a position in 3D space with reference to the origin of a 
+    right-handed Cartesian coordinate system.
 
     Generally a position is defined by its x, y, and z-coordinate. The
     coordinates have units of length (default is meter).
@@ -27,6 +28,26 @@ class Position:
         z: float = 0.0,
         units: str = 'm'
     ) -> None:
+        """Creates a `Position` object.
+        
+        Parameters
+        ----------
+        x:
+            Magnitude of the length of the x-component of the position vector 
+            measured from the origin of the right-handed Cartesian coordinate 
+            system.
+        y:
+            Magnitude of the length of the y-component of the position vector 
+            measured from the origin of the right-handed Cartesian coordinate 
+            system.
+        z:
+            Magnitude of the length of the z-component of the position vector 
+            measured from the origin of the right-handed Cartesian coordinate 
+            system.
+        units:
+            Measuring unit in which the magnitudes of the lengths are expressed.
+            Default measuring unit is 'm' (meters).
+        """
         self._x = x
         self._y = y
         self._z = z
@@ -97,7 +118,7 @@ class Angle:
         v: float | Quantity,
         h: float | Quantity,
         quadrant: int = 1
-    ) -> Angle:
+    ) -> Angle | None:
         """Creates an angle given the slope specified by a vertical distance `v`
         and horizontal distance `h`. By specifying the quadrant, the slope angle
         can be positioned in a right-handed coordinate system. The first
@@ -349,7 +370,7 @@ class Vector:
 
         Notes
         -----
-        Only fully determined (i.e. non symbolic) vectors can be reversed. A
+        Only fully determined (i.e. non-symbolic) vectors can be reversed. A
         `ValueError` exception is raised in case `vector` should be symbolic.
         """
         if isinstance(vector.theta, Angle) and isinstance(vector.gamma, Angle):
@@ -385,7 +406,7 @@ class Vector:
 
         Notes
         -----
-        Only fully determined (i.e. non symbolic) vectors can be reversed. A
+        Only fully determined (i.e. non-symbolic) vectors can be reversed. A
         `ValueError` exception is raised in case `vector` should be symbolic.
         """
         if isinstance(vector.theta, Angle) and isinstance(vector.gamma, Angle):
@@ -620,3 +641,7 @@ class DistributedLoad1D:
             return Q
         else:
             raise ValueError("position `x2` must be further than position `x1`")
+    
+    def __repr__(self) -> str:
+        return self.resultant().__repr__()
+       

@@ -37,10 +37,10 @@ boom = Beam(
     loadings=[F_C, F_A, F_B]
 )
 
-for name, force in boom.external_forces.items():
+for name, force in boom.ext_forces.items():
     print(name, force)
 
-for name, torque in boom.external_moments.items():
+for name, torque in boom.ext_moments.items():
     print(name, torque)
 
 iF_E, iM_E = boom.cut(x=Q_(1, 'm'), view='left')

@@ -39,7 +39,7 @@ F_E = Force(
 )
 
 
-sys = System([F_A, F_C, F_E, q])
+sys = System([F_A, F_C, F_E, q], units=('kN', 'm'))
 
 solutions = sys.solve()
 

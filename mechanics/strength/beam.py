@@ -1,3 +1,4 @@
+from __future__ import annotations
 from typing import Type
 from abc import ABC
 from dataclasses import dataclass
@@ -5,7 +6,7 @@ import numpy as np
 from mechanics import Quantity
 from mechanics.statics import Force, Moment, DistributedLoad1D
 from mechanics import statics
-from mechanics.geometry.shapes import Shape, Dimensions
+from mechanics.geometry.shapes import Shape, Dimensions, Circle
 from mechanics.strength.strain import AxialStrain, TorsionalStrain, ElasticCurve, BoundaryCondition
 from .section import Section
 
@@ -48,27 +49,30 @@ class FreeEnd(Support):
 
 class Beam(statics.Beam):
     """Extends class `Beam` from subpackage `statics`.
+    
     Base class `Beam` in subpackage `statics` implements calculation of the
     resultant internal force and/or moment in a cross-section of a beam.
+    
     The extended class `Beam` adds geometry to the cross-section by
     encapsulating an instance of class `Section` (see `strength.section.py`).
-    Through this instance it is possible to determine stresses resulting from the
-    internal force and/or moment in a given cross-section.
-    Furthermore, this class can also be used to determine the deformation of
-    the beam: elongation if the beam is subject to axial loadings, angle of
-    twist if the beam is subject to torsional loadings. If the beam is subject
-    to bending, then through its attribute `elastic_curve` the methods of class
-    `ElasticCurve` can be used to determine the vertical displacement and
-    slope of the beam (see `strength.strain.deflection.py`).
+    Through this instance it is possible to determine stresses resulting from 
+    the internal force and/or moment in a given cross-section.
+    
+    Furthermore, this extended class can also be used to determine the 
+    deformation of the beam: elongation if the beam is subject to axial 
+    loadings, angle of twist if the beam is subject to torsional loadings. If 
+    the beam is subject to bending, then through its attribute `elastic_curve` 
+    the methods of class `ElasticCurve` can be used to determine the vertical 
+    displacement and slope of the beam (see `strength.strain.deflection.py`).
     """
     def __init__(
         self,
         length: Quantity,
-        shape_type: Type[Shape],
-        shape_dim: Dimensions,
-        E_modulus: Quantity,
-        G_modulus: Quantity,
         loadings: list[Force | Moment | DistributedLoad1D],
+        shape_type: Type[Shape] = Circle,
+        shape_dim: Dimensions = Dimensions(radius=Q_(50, 'mm')),
+        E_modulus: Quantity = Q_(190, 'GPa'),
+        G_modulus: Quantity = Q_(75, 'GPa'),
         supports: list[Support] | None = None,
         units: tuple[str, str] | None = None,
         num_sections: int = 50
@@ -79,6 +83,10 @@ class Beam(statics.Beam):
         ----------
         length:
             Length of the beam.
+        loadings:
+            List of the external loadings applied to the beam. If some loadings
+            are not fully determined yet (reaction forces or moments), these
+            will be solved on instantiation of this class.
         shape_type:
             Type of shape, derived from base class `Shape`.
         shape_dim:
@@ -87,21 +95,28 @@ class Beam(statics.Beam):
             Modulus of elasticity or Young's modulus of the material.
         G_modulus:
             Shear modulus of elasticity or modulus of rigidity of the material.
-        loadings:
-            List of the external loadings applied to the beam. If some loadings
-            are not fully determined yet (reaction forces or moments), these
-            will be solved on instantiation of this class.
         supports:
-            Optional list with the supports that support the beam. If the
+            Optional list with the supports that support the beam. Only if the
             elastic curve of the beam is to be determined, the supports must be
             specified (instances of class `Roller`, `Hinge`, `FixedEnd`, and/or
             `FreeEnd`). If one end of the beam is not supported, this must also
             be indicated by a `FreeEnd` instance.
         units:
-            Tuple with the units of force and the units of length to be used.
+            Tuple of two strings. The first string contains the units of force
+            to be used (default units of force are 'N', Newtons). The second
+            string contains the units of length (default units of length are
+            'm', meters). If `units` is left to `None`, the default units are
+            used.
+            From the given units of force and of length, the units of
+            distributed loads and of moments (moments) are derived.
+            Note that the units are set at class level, i.e. when the units are
+            set on one `Beam` object, they will be inherited as default units
+            when instantiating other subsequent `Beam` objects.
         num_sections:
-            The number of sections to be made for determining the normal-force
-            diagram, shear diagram and moment diagram of the beam.
+            To determine the profiles of the normal force, shear force and
+            bending moment along the beam, the beam is cut at a number of
+            equally spaced cross-sections. The number of cuts can be specified
+            via parameter `num_sections` (default number of cuts is 50).
         """
         self.section = None  # (*)
         super().__init__(length, loadings, units, num_sections)
@@ -148,8 +163,9 @@ class Beam(statics.Beam):
     ) -> tuple[Force, Moment]:
         """Returns the internal force and/or moment at the position `x` along
         the longitudinal axis of the beam.
+        
         Parameter `view` indicates whether the cross-section of the left part of
-        the cut beam is to be regarded (this is the default) or the
+        the cut beam is to be looked at (this is the default) or the
         cross-section of its right part (`view = 'right'`).
 
         Through attribute `section` of this class the stresses resulting from
